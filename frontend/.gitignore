@@ -1,5 +1,13 @@
 /node_modules
+
 /dist
+
 /.angular
+
 npm-debug.log
+
 *.log
+
+/.agents
+
+/skills-lock.json

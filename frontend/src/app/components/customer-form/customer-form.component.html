@@ -1,66 +1,161 @@
-<div class="card" style="max-width: 600px;">
-  <div class="card-body">
-    <h5 class="card-title mb-3">
-      <ng-container *ngIf="isReadonly">Customer Details</ng-container>
-      <ng-container *ngIf="!isReadonly && isEditMode">Edit Customer</ng-container>
-      <ng-container *ngIf="!isReadonly && !isEditMode">New Customer</ng-container>
-    </h5>
+<section class="page-view" aria-labelledby="customer-form-title">
+  <header class="page-header form-page-header">
+    <div class="page-header-copy">
+      <button class="back-link" type="button" (click)="cancel()">
+        <span aria-hidden="true">←</span>
+        Customers
+      </button>
+      <h1 id="customer-form-title">{{ pageTitle }}</h1>
+      <p class="page-description">{{ pageDescription }}</p>
+    </div>
+    <span class="record-status">{{ customerReference }}</span>
+  </header>
 
-    <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
-
-    <p *ngIf="loading" class="text-muted">Loading...</p>
-
-    <form [formGroup]="form" (ngSubmit)="submit()" *ngIf="!loading">
-      <div class="mb-3">
-        <label class="form-label">First Name</label>
-        <input type="text" class="form-control" formControlName="first_name"
-               [class.is-invalid]="f['first_name'].touched && f['first_name'].invalid" />
-        <div class="invalid-feedback" *ngIf="f['first_name'].touched && f['first_name'].errors?.['required']">
-          First name is required.
-        </div>
-        <div class="text-danger small" *ngFor="let msg of fieldErrors['first_name']">{{ msg }}</div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Last Name</label>
-        <input type="text" class="form-control" formControlName="last_name"
-               [class.is-invalid]="f['last_name'].touched && f['last_name'].invalid" />
-        <div class="invalid-feedback" *ngIf="f['last_name'].touched && f['last_name'].errors?.['required']">
-          Last name is required.
-        </div>
-        <div class="text-danger small" *ngFor="let msg of fieldErrors['last_name']">{{ msg }}</div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Email Address</label>
-        <input type="email" class="form-control" formControlName="email"
-               [class.is-invalid]="f['email'].touched && f['email'].invalid" />
-        <div class="invalid-feedback" *ngIf="f['email'].touched && f['email'].errors?.['required']">
-          Email is required.
-        </div>
-        <div class="invalid-feedback" *ngIf="f['email'].touched && f['email'].errors?.['email']">
-          Enter a valid email address.
-        </div>
-        <div class="text-danger small" *ngFor="let msg of fieldErrors['email']">{{ msg }}</div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Contact Number</label>
-        <input type="text" class="form-control" formControlName="contact_number"
-               [class.is-invalid]="f['contact_number'].touched && f['contact_number'].invalid" />
-        <div class="invalid-feedback" *ngIf="f['contact_number'].touched && f['contact_number'].errors?.['required']">
-          Contact number is required.
-        </div>
-        <div class="text-danger small" *ngFor="let msg of fieldErrors['contact_number']">{{ msg }}</div>
-      </div>
-
-      <div class="d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-secondary" (click)="cancel()">Back to list</button>
-        <button type="button" class="btn btn-primary" *ngIf="isReadonly" (click)="switchToEdit()">Edit</button>
-        <button type="submit" class="btn btn-primary" *ngIf="!isReadonly" [disabled]="saving">
-          {{ saving ? 'Saving...' : 'Save' }}
-        </button>
-      </div>
-    </form>
+  <div class="status-message status-error" *ngIf="errorMessage" role="alert">
+    <span>{{ errorMessage }}</span>
+    <button type="button" aria-label="Dismiss message" (click)="errorMessage = ''">×</button>
   </div>
-</div>
+
+  <div class="form-skeleton" *ngIf="loading" aria-label="Loading customer">
+    <span class="skeleton-block skeleton-shimmer"></span>
+    <div>
+      <span class="skeleton-line skeleton-line-wide skeleton-shimmer"></span>
+      <span class="skeleton-line skeleton-line-short skeleton-shimmer"></span>
+      <span class="skeleton-field skeleton-shimmer"></span>
+      <span class="skeleton-field skeleton-shimmer"></span>
+      <span class="skeleton-field skeleton-shimmer"></span>
+    </div>
+  </div>
+
+  <div class="profile-workspace" *ngIf="!loading">
+    <aside class="profile-card" aria-label="Customer profile preview">
+      <div
+        class="profile-photo"
+        role="img"
+        [attr.aria-label]="displayName + ' profile photo placeholder'"
+        [style.background-image]="'url(' + customerPhoto() + '), url(' + placeholderPhoto + ')'"
+      >
+        <span>{{ customerInitials }}</span>
+        <small>Customer portrait</small>
+      </div>
+      <div class="profile-copy">
+        <p class="profile-label">Profile</p>
+        <h2>{{ displayName }}</h2>
+        <p>{{ displayEmail }}</p>
+      </div>
+      <dl class="profile-meta">
+        <div>
+          <dt>Record</dt>
+          <dd>{{ customerReference }}</dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd>{{ customerSince }}</dd>
+        </div>
+      </dl>
+    </aside>
+
+    <section class="form-card" aria-labelledby="information-title">
+      <div class="form-card-header">
+        <div>
+          <h2 id="information-title">{{ isReadonly ? 'Contact information' : 'Customer information' }}</h2>
+          <p *ngIf="!isReadonly">Fields marked with an asterisk are required.</p>
+        </div>
+        <span class="form-mode">{{ isReadonly ? 'Read only' : isEditMode ? 'Edit mode' : 'New record' }}</span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" [class.form-readonly]="isReadonly">
+        <div class="form-grid">
+          <div class="field-group">
+            <label for="first-name">First name <span aria-hidden="true">*</span></label>
+            <input
+              id="first-name"
+              type="text"
+              formControlName="first_name"
+              autocomplete="given-name"
+              [maxlength]="255"
+              [class.is-invalid]="f['first_name'].touched && f['first_name'].invalid"
+              aria-describedby="first-name-helper first-name-errors"
+            />
+            <small class="field-helper" id="first-name-helper">Use the name you normally use.</small>
+            <div class="field-errors" id="first-name-errors" *ngIf="f['first_name'].touched && f['first_name'].invalid">
+              <span *ngIf="f['first_name'].errors?.['required']">First name is required.</span>
+              <span *ngIf="f['first_name'].errors?.['maxlength']">Use 255 characters or fewer.</span>
+            </div>
+            <div class="field-errors" *ngFor="let message of fieldErrors['first_name']">{{ message }}</div>
+          </div>
+
+          <div class="field-group">
+            <label for="last-name">Last name <span aria-hidden="true">*</span></label>
+            <input
+              id="last-name"
+              type="text"
+              formControlName="last_name"
+              autocomplete="family-name"
+              [maxlength]="255"
+              [class.is-invalid]="f['last_name'].touched && f['last_name'].invalid"
+              aria-describedby="last-name-helper last-name-errors"
+            />
+            <small class="field-helper" id="last-name-helper">Enter a family or last name.</small>
+            <div class="field-errors" id="last-name-errors" *ngIf="f['last_name'].touched && f['last_name'].invalid">
+              <span *ngIf="f['last_name'].errors?.['required']">Last name is required.</span>
+              <span *ngIf="f['last_name'].errors?.['maxlength']">Use 255 characters or fewer.</span>
+            </div>
+            <div class="field-errors" *ngFor="let message of fieldErrors['last_name']">{{ message }}</div>
+          </div>
+
+          <div class="field-group field-group-wide">
+            <label for="customer-email">Email address <span aria-hidden="true">*</span></label>
+            <input
+              id="customer-email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              inputmode="email"
+              [maxlength]="255"
+              placeholder="name@example.com"
+              [class.is-invalid]="f['email'].touched && f['email'].invalid"
+              aria-describedby="email-helper email-errors"
+            />
+            <small class="field-helper" id="email-helper">Used for customer communication and sign-in.</small>
+            <div class="field-errors" id="email-errors" *ngIf="f['email'].touched && f['email'].invalid">
+              <span *ngIf="f['email'].errors?.['required']">Email address is required.</span>
+              <span *ngIf="f['email'].errors?.['email']">Enter a valid email address.</span>
+              <span *ngIf="f['email'].errors?.['maxlength']">Use 255 characters or fewer.</span>
+            </div>
+            <div class="field-errors" *ngFor="let message of fieldErrors['email']">{{ message }}</div>
+          </div>
+
+          <div class="field-group field-group-wide">
+            <label for="contact-number">Contact number <span aria-hidden="true">*</span></label>
+            <input
+              id="contact-number"
+              type="tel"
+              formControlName="contact_number"
+              autocomplete="tel"
+              inputmode="tel"
+              [maxlength]="50"
+              placeholder="+1 555 000 0000"
+              [class.is-invalid]="f['contact_number'].touched && f['contact_number'].invalid"
+              aria-describedby="phone-helper phone-errors"
+            />
+            <small class="field-helper" id="phone-helper">Include the country code when possible.</small>
+            <div class="field-errors" id="phone-errors" *ngIf="f['contact_number'].touched && f['contact_number'].invalid">
+              <span *ngIf="f['contact_number'].errors?.['required']">Contact number is required.</span>
+              <span *ngIf="f['contact_number'].errors?.['maxlength']">Use 50 characters or fewer.</span>
+            </div>
+            <div class="field-errors" *ngFor="let message of fieldErrors['contact_number']">{{ message }}</div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="button button-secondary" type="button" [disabled]="saving" (click)="cancel()">Back to directory</button>
+          <button class="button button-primary" type="button" *ngIf="isReadonly" (click)="switchToEdit()">Edit customer</button>
+          <button class="button button-primary" type="submit" *ngIf="!isReadonly" [disabled]="saving">
+            {{ saving ? 'Saving customer…' : 'Save customer' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</section>

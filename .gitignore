@@ -1,6 +1,10 @@
 .DS_Store
 *.log
 
+# agents / skills
+/.agents/
+/skills-lock.json
+
 # api
 api/vendor/
 api/.env

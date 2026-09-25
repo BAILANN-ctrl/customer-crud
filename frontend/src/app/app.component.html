@@ -1,7 +1,63 @@
-<header class="app-header">
-  <h1>{{ title }}</h1>
-</header>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="sidebar-main">
+      <a class="brand" routerLink="/customers" aria-label="Customer Desk home">
+        <span class="brand-mark" aria-hidden="true">C</span>
+        <span class="brand-copy">
+          <strong>{{ title }}</strong>
+          <small>Relationship workspace</small>
+        </span>
+      </a>
 
-<main class="container pb-5">
-  <router-outlet></router-outlet>
-</main>
+      <div class="sidebar-label">Workspace</div>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a
+          class="nav-item"
+          routerLink="/customers"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: false }"
+        >
+          <span class="nav-mark" aria-hidden="true">C</span>
+          <span>Customers</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-photo" [style.background-image]="'url(' + workspacePhoto + ')'">
+      <div class="sidebar-photo-overlay">
+        <span>Customer care</span>
+        <strong>One clear view.</strong>
+      </div>
+    </div>
+
+    <div class="workspace-profile">
+      <span class="profile-mark" aria-hidden="true">CD</span>
+      <span>
+        <strong>Customer desk</strong>
+        <small>Admin workspace</small>
+      </span>
+    </div>
+  </aside>
+
+  <section class="app-stage">
+    <header class="mobile-header">
+      <a class="brand" routerLink="/customers" aria-label="Customer Desk home">
+        <span class="brand-mark" aria-hidden="true">C</span>
+        <span class="brand-copy">
+          <strong>{{ title }}</strong>
+          <small>Relationship workspace</small>
+        </span>
+      </a>
+      <a class="mobile-customers-link" routerLink="/customers">Customers</a>
+    </header>
+
+    <main class="page-frame">
+      <router-outlet></router-outlet>
+    </main>
+
+    <footer class="app-footer">
+      <span>{{ title }}</span>
+      <span>Simple records. Better relationships.</span>
+    </footer>
+  </section>
+</div>

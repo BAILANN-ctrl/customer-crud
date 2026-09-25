@@ -1,9 +1,9 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
+import { ApiValidationError, Customer } from '../../models/customer.model';
 import { CustomerService } from '../../services/customer.service';
-import { ApiValidationError } from '../../models/customer.model';
 
 @Component({
   selector: 'app-customer-form',
@@ -12,12 +12,15 @@ import { ApiValidationError } from '../../models/customer.model';
 export class CustomerFormComponent implements OnInit {
   form: FormGroup;
   customerId: number | null = null;
+  loadedCustomer: Customer | null = null;
   isReadonly = false;
   isEditMode = false;
   loading = false;
   saving = false;
   errorMessage = '';
   fieldErrors: { [field: string]: string[] } = {};
+
+  readonly placeholderPhoto = 'assets/images/customers/customer-placeholder.svg';
 
   constructor(
     private fb: FormBuilder,
@@ -31,6 +34,55 @@ export class CustomerFormComponent implements OnInit {
       email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
       contact_number: ['', [Validators.required, Validators.maxLength(50)]]
     });
+  }
+
+  get f() {
+    return this.form.controls;
+  }
+
+  get pageTitle(): string {
+    if (this.isReadonly) {
+      return 'Customer details';
+    }
+
+    return this.isEditMode ? 'Edit customer' : 'New customer';
+  }
+
+  get pageDescription(): string {
+    if (this.isReadonly) {
+      return 'Review the information currently stored for this customer.';
+    }
+
+    if (this.isEditMode) {
+      return 'Update the customer record and keep every detail accurate.';
+    }
+
+    return 'Add the essentials now. The profile can be refined later.';
+  }
+
+  get displayName(): string {
+    const firstName = this.form.get('first_name')?.value?.trim();
+    const lastName = this.form.get('last_name')?.value?.trim();
+    const name = `${firstName ?? ''} ${lastName ?? ''}`.trim();
+    return name || (this.isEditMode ? 'Customer profile' : 'New customer');
+  }
+
+  get displayEmail(): string {
+    return this.form.get('email')?.value?.trim() || 'Email not added yet';
+  }
+
+  get customerInitials(): string {
+    const firstInitial = this.form.get('first_name')?.value?.trim().charAt(0) || '';
+    const lastInitial = this.form.get('last_name')?.value?.trim().charAt(0) || '';
+    return `${firstInitial}${lastInitial}`.toUpperCase() || 'CU';
+  }
+
+  get customerReference(): string {
+    return this.customerId ? `Customer #${this.customerId}` : 'New profile';
+  }
+
+  get customerSince(): string {
+    return this.formatDate(this.loadedCustomer?.created_at);
   }
 
   ngOnInit(): void {
@@ -48,14 +100,11 @@ export class CustomerFormComponent implements OnInit {
     }
   }
 
-  get f() {
-    return this.form.controls;
-  }
-
   loadCustomer(id: number): void {
     this.loading = true;
     this.customerService.get(id).subscribe({
       next: (response) => {
+        this.loadedCustomer = response.data;
         this.form.patchValue(response.data);
         this.loading = false;
       },
@@ -103,6 +152,27 @@ export class CustomerFormComponent implements OnInit {
         }
       }
     });
+  }
+
+  customerPhoto(): string {
+    return `assets/images/customers/customer-${this.customerId ?? 'new'}.jpg`;
+  }
+
+  formatDate(value?: string): string {
+    if (!value) {
+      return this.isEditMode ? 'Date unavailable' : 'Created on save';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'Date unavailable';
+    }
+
+    return new Intl.DateTimeFormat('en', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
   }
 
   cancel(): void {

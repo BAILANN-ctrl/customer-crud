@@ -1,75 +1,159 @@
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-  <div class="flex-grow-1 me-3" style="max-width: 420px;">
-    <input
-      type="text"
-      class="form-control"
-      placeholder="Search by name or email..."
-      [ngModel]="searchTerm"
-      (ngModelChange)="onSearchChange($event)"
-    />
-  </div>
-  <button class="btn btn-primary" (click)="createCustomer()">+ New Customer</button>
-</div>
+<section class="page-view" aria-labelledby="customer-directory-title">
+  <header class="page-header">
+    <div class="page-header-copy">
+      <p class="page-eyebrow">Customer directory</p>
+      <h1 id="customer-directory-title">Every relationship,<br><span>clearly organized.</span></h1>
+      <p class="page-description">Search, review, and maintain every customer record from one focused workspace.</p>
+    </div>
 
-<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
-<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="page-header-actions">
+      <div class="directory-count" aria-label="Total customers">
+        <span>{{ total }}</span>
+        <small>Total customers</small>
+      </div>
+      <button class="button button-primary" type="button" (click)="createCustomer()">
+        <span class="button-plus" aria-hidden="true">+</span>
+        New customer
+      </button>
+    </div>
+  </header>
 
-<div class="card">
-  <div class="card-body p-0">
-    <table class="table table-hover mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>Email</th>
-          <th>Contact Number</th>
-          <th class="text-end">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let customer of customers" class="cursor-pointer">
-          <td (click)="viewCustomer(customer)">{{ customer.first_name }}</td>
-          <td (click)="viewCustomer(customer)">{{ customer.last_name }}</td>
-          <td (click)="viewCustomer(customer)">{{ customer.email }}</td>
-          <td (click)="viewCustomer(customer)">{{ customer.contact_number }}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-secondary me-1" (click)="editCustomer(customer)">Edit</button>
-            <button class="btn btn-sm btn-outline-danger" (click)="confirmDelete(customer)">Delete</button>
-          </td>
-        </tr>
-        <tr *ngIf="!loading && customers.length === 0">
-          <td colspan="5" class="text-center text-muted py-4">No customers found.</td>
-        </tr>
-        <tr *ngIf="loading">
-          <td colspan="5" class="text-center text-muted py-4">Loading...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!searchTerm && lastPage > 1">
-  <span class="text-muted small">Page {{ currentPage }} of {{ lastPage }} ({{ total }} total)</span>
-  <div>
-    <button class="btn btn-sm btn-outline-secondary me-2" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-    <button class="btn btn-sm btn-outline-secondary" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">Next</button>
-  </div>
-</div>
-
-<p class="text-muted small mt-2" *ngIf="searchTerm">
-  Showing {{ total }} result(s) for "{{ searchTerm }}" via {{ source }}.
-</p>
-
-<!-- Delete confirmation modal -->
-<div class="modal-backdrop-custom" *ngIf="customerPendingDelete">
-  <div class="card p-3" style="max-width: 400px; margin: 15vh auto;">
-    <p>
-      Are you sure you want to delete
-      <strong>{{ customerPendingDelete.first_name }} {{ customerPendingDelete.last_name }}</strong>?
-    </p>
-    <div class="text-end">
-      <button class="btn btn-secondary me-2" (click)="cancelDelete()">Cancel</button>
-      <button class="btn btn-danger" (click)="deleteCustomer()">Delete</button>
+  <div class="status-stack" aria-live="polite">
+    <div class="status-message status-success" *ngIf="successMessage" role="status">
+      <span>{{ successMessage }}</span>
+      <button type="button" aria-label="Dismiss message" (click)="successMessage = ''">×</button>
+    </div>
+    <div class="status-message status-error" *ngIf="errorMessage" role="alert">
+      <span>{{ errorMessage }}</span>
+      <button type="button" aria-label="Dismiss message" (click)="errorMessage = ''">×</button>
     </div>
   </div>
+
+  <section class="directory-panel" aria-labelledby="directory-panel-title">
+    <div class="directory-toolbar">
+      <label class="search-control" for="customer-search">
+        <span class="field-label">Search directory</span>
+        <span class="search-input-wrap">
+          <span class="search-icon" aria-hidden="true"></span>
+          <input
+            id="customer-search"
+            type="search"
+            placeholder="Search by name or email"
+            autocomplete="off"
+            [ngModel]="searchTerm"
+            (ngModelChange)="onSearchChange($event)"
+          />
+          <button
+            class="search-clear"
+            type="button"
+            *ngIf="searchTerm"
+            aria-label="Clear search"
+            (click)="clearSearch()"
+          >×</button>
+        </span>
+      </label>
+      <p class="result-summary" aria-live="polite">{{ resultSummary }}</p>
+    </div>
+
+    <div class="skeleton-directory" *ngIf="loading" aria-label="Loading customers">
+      <div class="skeleton-row" *ngFor="let row of skeletonRows">
+        <span class="skeleton-avatar skeleton-shimmer"></span>
+        <span class="skeleton-copy">
+          <span class="skeleton-line skeleton-line-wide skeleton-shimmer"></span>
+          <span class="skeleton-line skeleton-line-short skeleton-shimmer"></span>
+        </span>
+        <span class="skeleton-action skeleton-shimmer"></span>
+      </div>
+    </div>
+
+    <div class="table-wrap" *ngIf="!loading && customers.length > 0">
+      <table class="customer-table">
+        <caption class="visually-hidden">Customer directory</caption>
+        <thead>
+          <tr>
+            <th scope="col">Customer</th>
+            <th scope="col">Email</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Added</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let customer of customers; trackBy: trackByCustomerId">
+            <td data-label="Customer">
+              <div class="customer-identity">
+                <span
+                  class="customer-avatar"
+                  [attr.data-tone]="avatarTone(customer)"
+                  [style.background-image]="'url(' + customerPhoto(customer) + '), url(' + placeholderPhoto + ')'"
+                  aria-hidden="true"
+                >
+                  <span>{{ customerInitials(customer) }}</span>
+                </span>
+                <span class="customer-name-group">
+                  <button class="customer-name" type="button" (click)="viewCustomer(customer)">
+                    {{ customer.first_name }} {{ customer.last_name }}
+                  </button>
+                  <small>Customer #{{ customer.id }}</small>
+                </span>
+              </div>
+            </td>
+            <td data-label="Email">
+              <a class="table-link" [href]="'mailto:' + customer.email">{{ customer.email }}</a>
+            </td>
+            <td data-label="Phone">
+              <a class="table-link" [href]="'tel:' + customer.contact_number">{{ customer.contact_number }}</a>
+            </td>
+            <td data-label="Added">
+              <span class="date-value">{{ formatDate(customer.created_at) }}</span>
+            </td>
+            <td data-label="Actions" class="action-cell">
+              <div class="row-actions">
+                <button class="text-action" type="button" (click)="editCustomer(customer)">Edit</button>
+                <button class="text-action text-action-danger" type="button" (click)="confirmDelete(customer)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && customers.length === 0">
+      <div class="empty-mark" aria-hidden="true">C</div>
+      <h2 id="directory-panel-title">{{ emptyTitle }}</h2>
+      <p>{{ emptyCopy }}</p>
+      <button class="button button-secondary" type="button" *ngIf="searchTerm" (click)="clearSearch()">Clear search</button>
+      <button class="button button-primary" type="button" *ngIf="!searchTerm" (click)="createCustomer()">New customer</button>
+    </div>
+
+    <footer class="directory-footer" *ngIf="!loading && customers.length > 0">
+      <p>Showing {{ customers.length }} of {{ total }} {{ total === 1 ? 'customer' : 'customers' }}</p>
+      <div class="pagination" *ngIf="!searchTerm && lastPage > 1" aria-label="Customer pages">
+        <button class="pagination-button" type="button" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+        <span>Page {{ currentPage }} of {{ lastPage }}</span>
+        <button class="pagination-button" type="button" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">Next</button>
+      </div>
+    </footer>
+  </section>
+</section>
+
+<div class="modal-backdrop-custom" *ngIf="customerPendingDelete" (click)="cancelDelete()">
+  <section
+    class="confirm-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="dialog-mark" aria-hidden="true">C</div>
+    <p class="dialog-context">Remove customer</p>
+    <h2 id="delete-dialog-title">Delete {{ customerPendingDelete.first_name }} {{ customerPendingDelete.last_name }}?</h2>
+    <p>This permanently removes the customer record. This action cannot be undone.</p>
+    <div class="dialog-actions">
+      <button class="button button-secondary" type="button" [disabled]="deleting" (click)="cancelDelete()">Keep customer</button>
+      <button class="button button-danger" type="button" [disabled]="deleting" (click)="deleteCustomer()">
+        {{ deleting ? 'Deleting…' : 'Delete customer' }}
+      </button>
+    </div>
+  </section>
 </div>
