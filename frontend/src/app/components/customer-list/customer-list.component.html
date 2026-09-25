@@ -1,0 +1,75 @@
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div class="flex-grow-1 me-3" style="max-width: 420px;">
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Search by name or email..."
+      [ngModel]="searchTerm"
+      (ngModelChange)="onSearchChange($event)"
+    />
+  </div>
+  <button class="btn btn-primary" (click)="createCustomer()">+ New Customer</button>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Email</th>
+          <th>Contact Number</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of customers" class="cursor-pointer">
+          <td (click)="viewCustomer(customer)">{{ customer.first_name }}</td>
+          <td (click)="viewCustomer(customer)">{{ customer.last_name }}</td>
+          <td (click)="viewCustomer(customer)">{{ customer.email }}</td>
+          <td (click)="viewCustomer(customer)">{{ customer.contact_number }}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary me-1" (click)="editCustomer(customer)">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" (click)="confirmDelete(customer)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && customers.length === 0">
+          <td colspan="5" class="text-center text-muted py-4">No customers found.</td>
+        </tr>
+        <tr *ngIf="loading">
+          <td colspan="5" class="text-center text-muted py-4">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!searchTerm && lastPage > 1">
+  <span class="text-muted small">Page {{ currentPage }} of {{ lastPage }} ({{ total }} total)</span>
+  <div>
+    <button class="btn btn-sm btn-outline-secondary me-2" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
+    <button class="btn btn-sm btn-outline-secondary" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">Next</button>
+  </div>
+</div>
+
+<p class="text-muted small mt-2" *ngIf="searchTerm">
+  Showing {{ total }} result(s) for "{{ searchTerm }}" via {{ source }}.
+</p>
+
+<!-- Delete confirmation modal -->
+<div class="modal-backdrop-custom" *ngIf="customerPendingDelete">
+  <div class="card p-3" style="max-width: 400px; margin: 15vh auto;">
+    <p>
+      Are you sure you want to delete
+      <strong>{{ customerPendingDelete.first_name }} {{ customerPendingDelete.last_name }}</strong>?
+    </p>
+    <div class="text-end">
+      <button class="btn btn-secondary me-2" (click)="cancelDelete()">Cancel</button>
+      <button class="btn btn-danger" (click)="deleteCustomer()">Delete</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,66 @@
+<div class="card" style="max-width: 600px;">
+  <div class="card-body">
+    <h5 class="card-title mb-3">
+      <ng-container *ngIf="isReadonly">Customer Details</ng-container>
+      <ng-container *ngIf="!isReadonly && isEditMode">Edit Customer</ng-container>
+      <ng-container *ngIf="!isReadonly && !isEditMode">New Customer</ng-container>
+    </h5>
+
+    <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <p *ngIf="loading" class="text-muted">Loading...</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" *ngIf="!loading">
+      <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input type="text" class="form-control" formControlName="first_name"
+               [class.is-invalid]="f['first_name'].touched && f['first_name'].invalid" />
+        <div class="invalid-feedback" *ngIf="f['first_name'].touched && f['first_name'].errors?.['required']">
+          First name is required.
+        </div>
+        <div class="text-danger small" *ngFor="let msg of fieldErrors['first_name']">{{ msg }}</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input type="text" class="form-control" formControlName="last_name"
+               [class.is-invalid]="f['last_name'].touched && f['last_name'].invalid" />
+        <div class="invalid-feedback" *ngIf="f['last_name'].touched && f['last_name'].errors?.['required']">
+          Last name is required.
+        </div>
+        <div class="text-danger small" *ngFor="let msg of fieldErrors['last_name']">{{ msg }}</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" formControlName="email"
+               [class.is-invalid]="f['email'].touched && f['email'].invalid" />
+        <div class="invalid-feedback" *ngIf="f['email'].touched && f['email'].errors?.['required']">
+          Email is required.
+        </div>
+        <div class="invalid-feedback" *ngIf="f['email'].touched && f['email'].errors?.['email']">
+          Enter a valid email address.
+        </div>
+        <div class="text-danger small" *ngFor="let msg of fieldErrors['email']">{{ msg }}</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Contact Number</label>
+        <input type="text" class="form-control" formControlName="contact_number"
+               [class.is-invalid]="f['contact_number'].touched && f['contact_number'].invalid" />
+        <div class="invalid-feedback" *ngIf="f['contact_number'].touched && f['contact_number'].errors?.['required']">
+          Contact number is required.
+        </div>
+        <div class="text-danger small" *ngFor="let msg of fieldErrors['contact_number']">{{ msg }}</div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">Back to list</button>
+        <button type="button" class="btn btn-primary" *ngIf="isReadonly" (click)="switchToEdit()">Edit</button>
+        <button type="submit" class="btn btn-primary" *ngIf="!isReadonly" [disabled]="saving">
+          {{ saving ? 'Saving...' : 'Save' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
