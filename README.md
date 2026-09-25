@@ -17,6 +17,7 @@ the required services, plus the Angular UI:
 | `api`        | Lumen (PHP 8.2) — the backend REST API         | `customer_api`         | 9000 (internal only) |
 | `controller` | Nginx — reverse proxy / load balancer in front of `api` | `customer_controller`  | 8080      |
 | `frontend`   | Angular UI, served by its own Nginx            | `customer_frontend`    | 4200      |
+| `frontend-tests` | One-off runner for the Angular unit tests (profile `tests`; not started by plain `docker compose up`) | — | — |
 
 ```
 Browser ──► frontend (Nginx + Angular, :4200)
@@ -117,11 +118,21 @@ needed):
 docker compose exec api vendor/bin/phpunit
 ```
 
-The Angular app includes unit tests for `CustomerService`:
+The Angular app includes unit tests for `CustomerService`, written with
+Jasmine + Karma. They run headlessly inside a dedicated one-off container
+(which ships its own Chromium, and uses a Karma `ChromeHeadlessNoSandbox`
+launcher so it works as root):
 
 ```bash
-docker compose exec frontend sh -c "cd /app && npm test"
-# (or, for local development outside Docker: npm install && npm test)
+docker compose --profile tests run --rm frontend-tests
+```
+
+If you prefer to run the frontend tests locally (requires Node + npm):
+
+```bash
+cd frontend
+npm install
+npm test
 ```
 
 ## Project layout
@@ -143,12 +154,14 @@ customer-crud/
 │   ├── Dockerfile
 │   └── default.conf
 └── frontend/             # Angular UI
-    ├── src/app/
-    │   ├── components/customer-list/
-    │   ├── components/customer-form/
-    │   ├── models/customer.model.ts
-    │   └── services/customer.service.ts
-    └── Dockerfile
+    ├── Dockerfile         # multi-stage: base / test / build / serve
+    ├── karma.conf.js      # Karma config (headless Chrome, no sandbox)
+    ├── nginx.conf
+    └── src/app/
+        ├── components/customer-list/
+        ├── components/customer-form/
+        ├── models/customer.model.ts
+        └── services/customer.service.ts
 ```
 
 ## Notes on design decisions

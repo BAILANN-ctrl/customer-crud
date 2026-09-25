@@ -59,6 +59,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./api:/var/www/html
+      # Preserve the vendor/ directory built inside the image; without this the
+      # ./api bind mount above would shadow /var/www/html/vendor and the API
+      # would be unable to boot (no composer autoloader).
+      - /var/www/html/vendor
     environment:
       - APP_ENV=local
       - DB_CONNECTION=mysql
@@ -108,6 +112,28 @@ services:
       - "4200:80"
     depends_on:
       - controller
+    networks:
+      - app-network
+
+  # ---------------------------------------------------------------------
+  # frontend-tests - one-off runner for the Angular unit tests (Karma + a
+  # headless Chromium). Not started by `docker compose up`; run on demand:
+  #     docker compose run --rm frontend-tests
+  # ---------------------------------------------------------------------
+  frontend-tests:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: test
+    profiles:
+      - tests
+    volumes:
+      - ./frontend:/app
+      # Same trick as `api`: keep the image's compiled node_modules instead of
+      # shadowing them with the (empty) host folder.
+      - /app/node_modules
+    environment:
+      - CHROME_BIN=/usr/bin/chromium
     networks:
       - app-network
 
